@@ -57,21 +57,16 @@ function db_select_query($db_con, $query){
 }
 
 //function that checks to see if user exists in database
+
 function check_user($db_con, $email){
-    $query = "SELECT * FROM users WHERE email = '$email'";
+    $query = "SELECT * FROM users WHERE Email = '$email'";
     $result = db_select_query($db_con, $query);
-    foreach($result as $row){
-        if($row['email'] == $email){
+    foreach($result as $row){ //result is an associative array so I then loop through it and if Email column has value of $email then return true
+        if($row['Email'] == $email){
             return true;
-        } else {
-            return false;
         }
     }
-    if($result){
-        return true;
-    } else {
-        return false;
-    }
+    return false;
 }
 
 //----------------functions for registering users-----------------
@@ -80,18 +75,47 @@ function display_register(){
     echo '<form method="post">
         <input type="hidden" name="action" value="register">
         <label>Name:</label>
-        <input type="text" name="name" required><br>
+        <input type="text" name="name" maxlength="8" minlength="4" required><br>
         <label>Email:</label>
         <input type="email" name="email" required><br>
         <label>Password:</label>
-        <input type="password" name="password" required><br>
+        <input type="password" name="password" minlength="8" required><br>
         <label>&nbsp;</label>
         <input type="submit" value="Register" name="submit"><br>
         </form>';
 
 }
+
+function display_login(){
+    echo '<form method="post">
+        <input type="hidden" name="action" value="login">
+        <label>Email:</label>
+        <input type="email" name="email" required><br>
+        <label>Password:</label>
+        <input type="password" name="password" minlength="8" required><br>
+        <label>&nbsp;</label>
+        <input type="submit" value="Login" name="submit"><br>
+        </form>';
+}
+
+function login(){
+    require "../model/db_config.php";
+    $db_con = db_connect($db_info, $username, $password);
+    if(check_user($db_con, $_POST['email'])){ //check if user exists
+        //if user does exsist, check if password entered matches password in database
+        if(password_verify($_POST['password'], $db_con->query("SELECT Password FROM users WHERE Email = '$_POST[email]'")->fetchColumn())){
+            echo "Login successful";
+        } else {
+            echo "Incorrect password";
+        }
+    } else {
+        echo "User does not exist";
+    }
+}
+
+
 //using post method to get form data
-function get_form_data(){
+function get_reg_form_data(){
     $user = $_POST['name'];
     $email = $_POST['email'];
     $password = $_POST['password'];
@@ -100,7 +124,7 @@ function get_form_data(){
     return $userInfo = array($user, $email, $saltedHashPass);
 }
 function addUser(){
-    $userArray = get_form_data(); //converts form-to-string array and salts and hashes password
+    $userArray = get_reg_form_data(); //converts form-to-string array and salts and hashes password
     require "../model/db_config.php";
     $db_con = db_connect($db_info, $username, $password); //connects to database
     $user = $userArray[0];
@@ -113,13 +137,31 @@ function addUser(){
         $query = "INSERT INTO users (Email, Username, Password, authenticated) VALUES ('$email', '$user', '$password','0')";
         $result = db_insert_query($db_con, $query); //query function returns result 
         //echo result
-        if($result){
-            echo "User registered";
-        } else {
-            echo "User not registered";
+        if($result){     
+            echo "User registered!";}
+        else {
+            echo "User not registered!";
         }
     }
 }
+//this returns false atm... waiting on discussion forum to see if I can access php.ini
+function sendEmail($email, $user){
+    $to = $email;
+    $subject = "Email Subject";
+
+    $message = 'Dear '.$user.',<br>';
+    $message .= "We welcome you to be part of family<br><br>";
+    $message .= "Regards,<br>";
+
+    // Always set content-type when sending HTML email
+    $headers = "MIME-Version: 1.0" . "\r\n";
+    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+
+    // More headers
+    $headers .= 'From: <enquiry@example.com>' . "\r\n";
+    $headers .= 'Cc: myboss@example.com' . "\r\n";
+
+    mail($to,$subject,$message,$headers);   
+}
 
 
-//password_verify() function to check password against hash need to make later

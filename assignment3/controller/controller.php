@@ -2,6 +2,7 @@
     //Harlan Ferguson 101133838
     
     require "functions.php";
+    
     $page = $_GET['page'] ?? "login"; //get page or default to upload
     getMenu();
     switch($page){
