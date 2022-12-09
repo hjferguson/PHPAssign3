@@ -1,4 +1,5 @@
 <?php
+session_start();
 //--------------------functions for navigation------------------
 function getMenu(){ //use get method to work with switch case. page is the case
 
@@ -98,13 +99,37 @@ function display_login(){
         </form>';
 }
 
+function check_cookie(){
+    if(isset($_COOKIE['user'])){
+        //change value in email textbox to cookie value
+        echo '<form method="post">
+        <input type="text" name="text" value="this tests if cookie form is displaying"><br> 
+        <input type="hidden" name="action" value="login">
+        <label>Email:</label>
+        <input type="email" name="email" value="' . $_COOKIE['user'] . '" required><br>
+        <label>Password:</label>
+        <input type="password" name="password" minlength="8" required><br>
+        <label>&nbsp;</label>
+        <input type="submit" value="Login" name="submit"><br>
+        </form>';
+    } else {
+        display_login();
+    }
+}
+
+
 function login(){
     require "../model/db_config.php";
     $db_con = db_connect($db_info, $username, $password);
     if(check_user($db_con, $_POST['email'])){ //check if user exists
         //if user does exsist, check if password entered matches password in database
         if(password_verify($_POST['password'], $db_con->query("SELECT Password FROM users WHERE Email = '$_POST[email]'")->fetchColumn())){
+            
+            $_SESSION['user'] = $_POST['email'];
+            echo "Session variable: " . $_SESSION['user'];
+            $_GET['page'] = "setcookie";      
             echo "Login successful";
+            
         } else {
             echo "Incorrect password";
         }
