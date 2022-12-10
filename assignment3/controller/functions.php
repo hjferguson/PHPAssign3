@@ -1,6 +1,4 @@
 <?php
-//session_start();
-//--------------------functions for navigation------------------
 
 function noLogMenu(){
     echo("<nav> 
@@ -22,7 +20,7 @@ function logMenu(){
         </nav>");
 }
 
-//----------------Functions for database-------------------
+
 function db_connect($db_info, $username, $password){
     try{
     $db_con = new PDO($db_info, $username, $password); 
@@ -78,7 +76,7 @@ function check_user($db_con, $email){
     return false;
 }
 
-//----------------functions for registering users-----------------
+
 function display_register(){
     
     echo '<form method="post">
@@ -135,65 +133,73 @@ function display_upload(){
 }   
 
 
-//function that gets upload file from display_upload(), confirms it is a txt file, then explodes the file into an array and creates a table in the database
+//function that gets upload file from display_upload(), confirms it is a txt file,
+// then explodes the file into an array and creates a table in the database
 function upload_file($user){
     $file = $_FILES['file'];
     $file_name = $file['name'];
     $file_tmp = $file['tmp_name'];
     $file_size = $file['size'];
     $file_error = $file['error'];
-    $file_ext = explode('.', $file_name);
-    $file_ext = strtolower(end($file_ext));
-    $allowed = array('txt');
-    if(in_array($file_ext, $allowed)){
-        if($file_error === 0){
-            if($file_size <= 1000000){
-                $file_name_new = $user . $file_name;
-                $table_name = $file_name_new;//harlanjazz@gmail.comtest.txt
-                $table_name = strstr($table_name, '@', true);
-                $table_name = $table_name . '_' . strstr($file_name, '.', true);
-                
-                $file_destination = '../model/uploads/' . $file_name_new;
-
-                if(move_uploaded_file($file_tmp, $file_destination)){
-                    $file = fopen($file_destination, "r");
-                    $lines_read = file($file_destination);
-                    fclose($file);
-                    require "../model/db_config.php";
-                    $db_con = db_connect($db_info, $username, $password);
-                    $query = "CREATE TABLE IF NOT EXISTS $table_name (   
-                        AssessmentID INT NOT NULL PRIMARY KEY,
-                        CourseCode VARCHAR(8) NOT NULL,
-                        AssessmentType VARCHAR(255) NOT NULL,
-                        AssessmentDate VARCHAR(255) NOT NULL,
-                        AssessmentTime VARCHAR(255) NOT NULL,
-                        AssessmentStatus VARCHAR(255) NOT NULL
-                    )";
+    if(check_file_format($file)){
+        $file_ext = explode('.', $file_name);
+        $file_ext = strtolower(end($file_ext));
+        $allowed = array('txt');
+        if(in_array($file_ext, $allowed)){
+            if($file_error === 0){
+                if($file_size <= 1000000){
+                    $file_name_new = $user . $file_name;
+                    $table_name = $file_name_new;//harlanjazz@gmail.comtest.txt
+                    $table_name = strstr($table_name, '@', true);
+                    $table_name = $table_name . '_' . strstr($file_name, '.', true);
                     
-                    if(db_insert_query($db_con, $query)){
-                        echo "Table created successfully";
-                    } else {
-                        echo "Error creating table";
-                    };
+                    $file_destination = '../model/uploads/' . $file_name_new;
 
-                    foreach($lines_read as $line){
-                        $line = explode(',', $line);
-                        $query = "INSERT INTO $table_name (AssessmentID, CourseCode, AssessmentType, AssessmentDate, AssessmentTime, AssessmentStatus) VALUES ('$line[0]', '$line[1]', '$line[2]', '$line[3]', '$line[4]', '$line[5]')";
-                        db_insert_query($db_con, $query);
+                    if(move_uploaded_file($file_tmp, $file_destination)){
+                        $file = fopen($file_destination, "r");
+                        $lines_read = file($file_destination);
+                        fclose($file);
+                        require "../model/db_config.php";
+                        $db_con = db_connect($db_info, $username, $password);
+                        $query = "CREATE TABLE IF NOT EXISTS $table_name (   
+                            AssessmentID INT NOT NULL PRIMARY KEY,
+                            CourseCode VARCHAR(8) NOT NULL,
+                            AssessmentType VARCHAR(255) NOT NULL,
+                            AssessmentDate VARCHAR(255) NOT NULL,
+                            AssessmentTime VARCHAR(255) NOT NULL,
+                            AssessmentStatus VARCHAR(255) NOT NULL
+                        )";
+                        
+                        if(db_insert_query($db_con, $query)){
+                            echo "Table created successfully";
+                        } else {
+                            echo "Error creating table";
+                        };
+
+                        foreach($lines_read as $line){
+                            $line = explode(',', $line);
+                            $query = "INSERT INTO $table_name (AssessmentID, CourseCode, AssessmentType, AssessmentDate, AssessmentTime, AssessmentStatus) VALUES ('$line[0]', '$line[1]', '$line[2]', '$line[3]', '$line[4]', '$line[5]')";
+                            db_insert_query($db_con, $query);
+                        }
+                        echo "File uploaded successfully";
+                        if(!isset($_SESSION['file'])){
+                            $_SESSION['file'] = $file_name;
+                        } 
+                    } else {
+                        echo "There was an error uploading your file";
                     }
-                    echo "File uploaded successfully";
                 } else {
-                    echo "There was an error uploading your file";
+                    echo "Your file is too big";
                 }
             } else {
-                echo "Your file is too big";
+                echo "There was an error uploading your file";
             }
         } else {
-            echo "There was an error uploading your file";
+            echo "You cannot upload files of this type";
         }
     } else {
-        echo "You cannot upload files of this type";
-    }
+            echo "File not formatted correctly";
+        }
 }
 
 function login(){
@@ -251,13 +257,13 @@ function addUser(){
 }
 
 //PARTIAL MARKS???????? It's literally impossible for this scope of assignment????
-function send_email($email){
-    $to = $email;
-    $subject = "Email Verification";
-    $message = "Please click the link below to verify your email address: https://f2133838.gblearn.com/comp1230/assignments/assignment3/controller/controller.php?email=$email";
-    $headers = "From: a_user@user.com";
-    mail($to, $subject, $message, $headers);
-}
+// function send_email($email){
+//     $to = $email;
+//     $subject = "Email Verification";
+//     $message = "Please click the link below to verify your email address: https://f2133838.gblearn.com/comp1230/assignments/assignment3/controller/controller.php?email=$email";
+//     $headers = "From: a_user@user.com";
+//     mail($to, $subject, $message, $headers);
+// }
 
 
 function display_table($user, $fileName){
@@ -266,7 +272,7 @@ function display_table($user, $fileName){
     $file_name_new = $user . $fileName;
     $table_name = $file_name_new;//harlanjazz@gmail.comtest.txt
     $table_name = strstr($table_name, '@', true);
-    $table_name = $table_name . '_' . strstr($fileName, '.', true);
+    $table_name = $table_name . '_' . strstr($fileName, '.', true); //harlanjazz_test
     $query = "SELECT * FROM $table_name";
     $result = db_select_query($db_con, $query);
     
@@ -291,3 +297,59 @@ function display_table($user, $fileName){
     }
     echo "</table>";
 }
+
+
+function check_file_format($file){ 
+    $lines_read = file($file);
+    $line_count = count($lines_read);
+    $line_number = 0;
+    $error = false;
+    foreach($lines_read as $line){
+        $line_number++;
+        $line = explode(',', $line);
+        if(count($line) != 6){
+            echo "Line $line_number does not have 6 values";
+            $error = true;
+        }
+        if(!is_numeric($line[0])){
+            echo "Line $line_number does not have a numeric value for Assessment ID";
+            $error = true;
+        }
+        if(strlen($line[1]) != 8){
+            echo "Line $line_number does not have a 8 character value for Course Code";
+            $error = true;
+        }
+        if(!is_string($line[2])){
+            echo "Line $line_number does not have a string value for Assessment Type";
+            $error = true;
+        }
+        if(!is_string($line[5])){
+            echo "Line $line_number does not have a string value for Assessment Status";
+            $error = true;
+        }
+        if($line[5] != "Current" && $line[5] != "Completed"){
+            echo "Line $line_number does not have a valid value for Assessment Status";
+            $error = true;
+        }
+    }
+    if($error){
+        return false;
+    } else {
+        return true;
+    }
+}
+
+//function that displays all tables in the database where the table name has  the name of the user in it
+// function display_tables($user){
+//     require "../model/db_config.php";
+//     $db_con = db_connect($db_info, $username, $password);
+//     $query = "SHOW TABLES";
+//     $result = db_select_query($db_con, $query);
+//     foreach($result as $row){
+//         $table_name = $row['Tables_in_assessment'];
+//         if(strstr($table_name, $user)){
+//             display_table($_SESSION['user'], $_SESSION['file']);
+//         }
+//     }
+// }
+

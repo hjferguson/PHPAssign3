@@ -1,4 +1,8 @@
 <?php
+    // $your_personal_email = 'harlanjazz@gmail.com';  // change it to your personal email, not GBC
+    // $subject = 'Sample Title: Email from GBLearn';
+    // $msg = 'This is sample content';
+    // mail($your_personal_email,$subject,$msg);
     //Harlan Ferguson 101133838 
     session_start();
     require "functions.php";
