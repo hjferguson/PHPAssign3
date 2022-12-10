@@ -5,22 +5,32 @@
     setcookie("user", htmlspecialchars($_SESSION['user']), time() + (86400 * 5), "/"); //htmlsepcialchars helps with output
 
     $page = $_GET['page'] ?? "login"; //get page or default to upload
-    getMenu();
+    
 
     //multiple switches depending on session user
 
     if(isset($_SESSION['user'])){
-        //make a switch
-        //switch($page)
+        logMenu();
+
         switch($page){
             case("upload"):
                 require "../view/upload.php";
+                break;
+
+            case("logout"):
+                require "../view/logout.php";
+                break;
+
+            case("viewTable"):
+                require "../view/viewTable.php";
                 break;
         }
 
     }
 
     else{
+        noLogMenu();
+
         switch($page){
             case "register":
                 
@@ -32,10 +42,6 @@
                 
                 break;
             
-            // case "upload":
-            //     require "upload.php";
-            //     break;
-    
         }
 
 

@@ -1,15 +1,23 @@
 <?php
 //session_start();
 //--------------------functions for navigation------------------
-function getMenu(){ //use get method to work with switch case. page is the case
 
-    //need to add to this and controller.php
+function noLogMenu(){
     echo("<nav> 
         <a href='controller.php?page=register'>Register</a> 
         <a>|</a>
         <a href='controller.php?page=login'>Login</a>
+        <hr>
+        </nav>");
+}
+
+function logMenu(){
+    echo("<nav> 
+        <a href='controller.php?page=logout'>Logout</a> 
         <a>|</a>
         <a href='controller.php?page=upload'>Upload</a>
+        <a>|</a>
+        <a href='controller.php?page=viewTable'>View Table</a>
         <hr>
         </nav>");
 }
@@ -62,7 +70,7 @@ function db_select_query($db_con, $query){
 function check_user($db_con, $email){
     $query = "SELECT * FROM users WHERE Email = '$email'";
     $result = db_select_query($db_con, $query);
-    foreach($result as $row){ //result is an associative array so I then loop through it and if Email column has value of $email then return true
+    foreach($result as $row){ //result is an associative array so I then loop through it and if Email column has line of $email then return true
         if($row['Email'] == $email){
             return true;
         }
@@ -74,7 +82,7 @@ function check_user($db_con, $email){
 function display_register(){
     
     echo '<form method="post">
-        <input type="hidden" name="action" value="register">
+        <input type="hidden" name="action" line="register">
         <label>Name:</label>
         <input type="text" name="name" maxlength="8" minlength="4" required><br>
         <label>Email:</label>
@@ -82,34 +90,34 @@ function display_register(){
         <label>Password:</label>
         <input type="password" name="password" minlength="8" required><br>
         <label>&nbsp;</label>
-        <input type="submit" value="Register" name="submit"><br>
+        <input type="submit" line="Register" name="submit"><br>
         </form>';
 
 }
 
 function display_login(){
     echo '<form method="post">
-        <input type="hidden" name="action" value="login">
+        <input type="hidden" name="action" line="login">
         <label>Email:</label>
         <input type="email" name="email" required><br>
         <label>Password:</label>
         <input type="password" name="password" minlength="8" required><br>
         <label>&nbsp;</label>
-        <input type="submit" value="Login" name="submit"><br>
+        <input type="submit" line="Login" name="submit"><br>
         </form>';
 }
 
 function check_cookie(){
     if(isset($_COOKIE['user'])){
-        //change value in email textbox to cookie value
+        //change line in email textbox to cookie line
         echo '<form method="post"> 
-        <input type="hidden" name="action" value="login">
+        <input type="hidden" name="action" line="login">
         <label>Email:</label>
-        <input type="email" name="email" value="' . $_COOKIE['user'] . '" required><br>
+        <input type="email" name="email" line="' . $_COOKIE['user'] . '" required><br>
         <label>Password:</label>
         <input type="password" name="password" minlength="8" required><br>
         <label>&nbsp;</label>
-        <input type="submit" value="Login" name="submit"><br>
+        <input type="submit" line="Login" name="submit"><br>
         </form>';
     } else {
         display_login();
@@ -118,13 +126,14 @@ function check_cookie(){
 
 function display_upload(){
     echo '<form method="post" enctype="multipart/form-data">
-        <input type="hidden" name="action" value="upload">
+        <input type="hidden" name="action" line="upload">
         <label>File:</label>
         <input type="file" name="file" required><br>
         <label>&nbsp;</label>
-        <input type="submit" value="Upload" name="submit"><br>
+        <input type="submit" line="Upload" name="submit"><br>
         </form>';
-}    
+}   
+
 
 //function that gets upload file from display_upload(), confirms it is a txt file, then explodes the file into an array and creates a table in the database
 function upload_file($user){
@@ -139,27 +148,17 @@ function upload_file($user){
     if(in_array($file_ext, $allowed)){
         if($file_error === 0){
             if($file_size <= 1000000){
-                //$file_name_new = $user . uniqid('', true) . '.' . $file_ext; //creates a unique file name
-                //$file_name_new = $user . $file_name . '.' . $file_ext;
                 $file_name_new = $user . $file_name;
                 $table_name = $file_name_new;//harlanjazz@gmail.comtest.txt
-                $table_name = str_replace(".$file_ext", '', $table_name);//harlanjazz@gmail.comtest 
+                $table_name = strstr($table_name, '@', true);
+                $table_name = $table_name . '_' . strstr($file_name, '.', true);
+                
                 $file_destination = '../model/uploads/' . $file_name_new;
+
                 if(move_uploaded_file($file_tmp, $file_destination)){
                     $file = fopen($file_destination, "r");
-                    $file_data = fread($file, filesize($file_destination));
-                    $file_data = explode(',', $file_data); //Array ( [0] => 1 [1] => COMP1230 [2] => quiz [3] => Dec 10 [4] => 8pm [5] => Completed )
+                    $lines_read = file($file_destination);
                     fclose($file);
-                    
-                    // Check the value of the variable for special characters or reserved words that 
-                    // might cause the CREATE TABLE statement to fail. If the variable contains any of 
-                    // these characters or words, you will need to modify the value of the variable or
-
-                    //using static table name works... might be that the email's '@' is now allowed in sql
-                    //or that it is actually displaying at %20 like in the cookie, which also not sql happy
-                    //try making session variable for name, not email, and using that... 
-
-
                     require "../model/db_config.php";
                     $db_con = db_connect($db_info, $username, $password);
                     $query = "CREATE TABLE IF NOT EXISTS $table_name (   
@@ -170,17 +169,16 @@ function upload_file($user){
                         AssessmentTime VARCHAR(255) NOT NULL,
                         AssessmentStatus VARCHAR(255) NOT NULL
                     )";
-                    //$query = "CREATE TABLE IF NOT EXISTS test (AssessmentID INT NOT NULL, CourseCode VARCHAR(8) NOT NULL, AssessmentType VARCHAR(255) NOT NULL, AssessmentDate VARCHAR(255) NOT NULL, AssessmentTime VARCHAR(255) NOT NULL, AssessmentStatus VARCHAR(255) NOT NULL)";
+                    
                     if(db_insert_query($db_con, $query)){
                         echo "Table created successfully";
                     } else {
                         echo "Error creating table";
                     };
-                    foreach($file_data as $value){
-                        //$value = explode(' ', $value);
-                        echo "show value before insert SQL<br><br>";
-                        print_r($value);
-                        $query = "INSERT INTO $table_name (AssessmentID, CourseCode, AssessmentType, AssessmentDate, AssessmentTime, AssessmentStatus) VALUES ('$value[0]', '$value[1]', '$value[2]', '$value[3]', '$value[4]', '$value[5]')";
+
+                    foreach($lines_read as $line){
+                        $line = explode(',', $line);
+                        $query = "INSERT INTO $table_name (AssessmentID, CourseCode, AssessmentType, AssessmentDate, AssessmentTime, AssessmentStatus) VALUES ('$line[0]', '$line[1]', '$line[2]', '$line[3]', '$line[4]', '$line[5]')";
                         db_insert_query($db_con, $query);
                     }
                     echo "File uploaded successfully";
@@ -198,22 +196,6 @@ function upload_file($user){
     }
 }
 
-
-
-//upload:
-
-// the user can upload a .txt file
-
-// SQL command CREATE TABLE
-
-// exploding the file after reading the file
-
-// SQL commend INSERT INTO table
-
-
-// Now anytime we load the data for current and completed pages, it should load from the database, not the file
-
-
 function login(){
     require "../model/db_config.php";
     $db_con = db_connect($db_info, $username, $password);
@@ -221,7 +203,8 @@ function login(){
         //if user does exsist, check if password entered matches password in database
         if(password_verify($_POST['password'], $db_con->query("SELECT Password FROM users WHERE Email = '$_POST[email]'")->fetchColumn())){
             if(!isset($_COOKIE['user'])){
-                $_SESSION['user'] = $_POST['email'];   
+                $_SESSION['user'] = $_POST['email'];
+
             }
                   
             echo "Login successful";
@@ -274,4 +257,37 @@ function send_email($email){
     $message = "Please click the link below to verify your email address: https://f2133838.gblearn.com/comp1230/assignments/assignment3/controller/controller.php?email=$email";
     $headers = "From: a_user@user.com";
     mail($to, $subject, $message, $headers);
+}
+
+
+function display_table($user, $fileName){
+    require "../model/db_config.php";
+    $db_con = db_connect($db_info, $username, $password);
+    $file_name_new = $user . $fileName;
+    $table_name = $file_name_new;//harlanjazz@gmail.comtest.txt
+    $table_name = strstr($table_name, '@', true);
+    $table_name = $table_name . '_' . strstr($fileName, '.', true);
+    $query = "SELECT * FROM $table_name";
+    $result = db_select_query($db_con, $query);
+    
+    echo "<table>";
+    echo "<tr>";
+    echo "<th>Assessment ID</th>";
+    echo "<th>Course Code</th>";
+    echo "<th>Assessment Type</th>";
+    echo "<th>Assessment Date</th>";
+    echo "<th>Assessment Time</th>";
+    echo "<th>Assessment Status</th>";
+    echo "</tr>";
+    foreach($result as $row){
+        echo "<tr>";
+        echo "<td>" . $row['AssessmentID'] . "</td>";
+        echo "<td>" . $row['CourseCode'] . "</td>";
+        echo "<td>" . $row['AssessmentType'] . "</td>";
+        echo "<td>" . $row['AssessmentDate'] . "</td>";
+        echo "<td>" . $row['AssessmentTime'] . "</td>";
+        echo "<td>" . $row['AssessmentStatus'] . "</td>";
+        echo "</tr>";
+    }
+    echo "</table>";
 }

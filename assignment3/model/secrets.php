@@ -1,2 +1,2 @@
 <?php
-$pass = "insert pass here";
+$pass = "ROX*j[MRG8XS";
