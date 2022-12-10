@@ -1,6 +1,5 @@
 <?php
-    //Harlan Ferguson 101133838
-    
+    //Harlan Ferguson 101133838 
     session_start();
     require "functions.php";
     setcookie("user", htmlspecialchars($_SESSION['user']), time() + (86400 * 5), "/"); //htmlsepcialchars helps with output

@@ -1,5 +1,5 @@
 <?php
-session_start();
+//session_start();
 //--------------------functions for navigation------------------
 function getMenu(){ //use get method to work with switch case. page is the case
 
@@ -116,6 +116,103 @@ function check_cookie(){
     }
 }
 
+function display_upload(){
+    echo '<form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="upload">
+        <label>File:</label>
+        <input type="file" name="file" required><br>
+        <label>&nbsp;</label>
+        <input type="submit" value="Upload" name="submit"><br>
+        </form>';
+}    
+
+//function that gets upload file from display_upload(), confirms it is a txt file, then explodes the file into an array and creates a table in the database
+function upload_file($user){
+    $file = $_FILES['file'];
+    $file_name = $file['name'];
+    $file_tmp = $file['tmp_name'];
+    $file_size = $file['size'];
+    $file_error = $file['error'];
+    $file_ext = explode('.', $file_name);
+    $file_ext = strtolower(end($file_ext));
+    $allowed = array('txt');
+    if(in_array($file_ext, $allowed)){
+        if($file_error === 0){
+            if($file_size <= 1000000){
+                //$file_name_new = $user . uniqid('', true) . '.' . $file_ext; //creates a unique file name
+                //$file_name_new = $user . $file_name . '.' . $file_ext;
+                $file_name_new = $user . $file_name;
+                $table_name = $file_name_new;//harlanjazz@gmail.comtest.txt
+                $table_name = str_replace(".$file_ext", '', $table_name);//harlanjazz@gmail.comtest 
+                $file_destination = '../model/uploads/' . $file_name_new;
+                if(move_uploaded_file($file_tmp, $file_destination)){
+                    $file = fopen($file_destination, "r");
+                    $file_data = fread($file, filesize($file_destination));
+                    $file_data = explode(',', $file_data); //Array ( [0] => 1 [1] => COMP1230 [2] => quiz [3] => Dec 10 [4] => 8pm [5] => Completed )
+                    fclose($file);
+                    
+                    // Check the value of the variable for special characters or reserved words that 
+                    // might cause the CREATE TABLE statement to fail. If the variable contains any of 
+                    // these characters or words, you will need to modify the value of the variable or
+
+                    //using static table name works... might be that the email's '@' is now allowed in sql
+                    //or that it is actually displaying at %20 like in the cookie, which also not sql happy
+                    //try making session variable for name, not email, and using that... 
+
+
+                    require "../model/db_config.php";
+                    $db_con = db_connect($db_info, $username, $password);
+                    $query = "CREATE TABLE IF NOT EXISTS $table_name (   
+                        AssessmentID INT NOT NULL PRIMARY KEY,
+                        CourseCode VARCHAR(8) NOT NULL,
+                        AssessmentType VARCHAR(255) NOT NULL,
+                        AssessmentDate VARCHAR(255) NOT NULL,
+                        AssessmentTime VARCHAR(255) NOT NULL,
+                        AssessmentStatus VARCHAR(255) NOT NULL
+                    )";
+                    //$query = "CREATE TABLE IF NOT EXISTS test (AssessmentID INT NOT NULL, CourseCode VARCHAR(8) NOT NULL, AssessmentType VARCHAR(255) NOT NULL, AssessmentDate VARCHAR(255) NOT NULL, AssessmentTime VARCHAR(255) NOT NULL, AssessmentStatus VARCHAR(255) NOT NULL)";
+                    if(db_insert_query($db_con, $query)){
+                        echo "Table created successfully";
+                    } else {
+                        echo "Error creating table";
+                    };
+                    foreach($file_data as $value){
+                        //$value = explode(' ', $value);
+                        echo "show value before insert SQL<br><br>";
+                        print_r($value);
+                        $query = "INSERT INTO $table_name (AssessmentID, CourseCode, AssessmentType, AssessmentDate, AssessmentTime, AssessmentStatus) VALUES ('$value[0]', '$value[1]', '$value[2]', '$value[3]', '$value[4]', '$value[5]')";
+                        db_insert_query($db_con, $query);
+                    }
+                    echo "File uploaded successfully";
+                } else {
+                    echo "There was an error uploading your file";
+                }
+            } else {
+                echo "Your file is too big";
+            }
+        } else {
+            echo "There was an error uploading your file";
+        }
+    } else {
+        echo "You cannot upload files of this type";
+    }
+}
+
+
+
+//upload:
+
+// the user can upload a .txt file
+
+// SQL command CREATE TABLE
+
+// exploding the file after reading the file
+
+// SQL commend INSERT INTO table
+
+
+// Now anytime we load the data for current and completed pages, it should load from the database, not the file
+
 
 function login(){
     require "../model/db_config.php";
@@ -136,7 +233,6 @@ function login(){
         echo "User does not exist";
     }
 }
-
 
 //using post method to get form data
 function get_reg_form_data(){
@@ -163,6 +259,8 @@ function addUser(){
         //echo result
         if($result){     
             echo "User registered!";}
+            //send_email($email);
+            //echo "Please check your email for a verification link in order to log in.";
         else {
             echo "User not registered!";
         }
@@ -173,7 +271,7 @@ function addUser(){
 function send_email($email){
     $to = $email;
     $subject = "Email Verification";
-    $message = "Please click the link below to verify your email address: http://localhost/PHP/PHP%20Project%20-%20Final%20Project/index.php?page=verify&email=$email";
+    $message = "Please click the link below to verify your email address: https://f2133838.gblearn.com/comp1230/assignments/assignment3/controller/controller.php?email=$email";
     $headers = "From: a_user@user.com";
     mail($to, $subject, $message, $headers);
 }

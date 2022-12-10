@@ -1,2 +1,2 @@
 <?php
-$pass = "insert gblearn user's pass here";
+$pass = "ROX*j[MRG8XS";
