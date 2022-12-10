@@ -102,8 +102,7 @@ function display_login(){
 function check_cookie(){
     if(isset($_COOKIE['user'])){
         //change value in email textbox to cookie value
-        echo '<form method="post">
-        <input type="text" name="text" value="this tests if cookie form is displaying"><br> 
+        echo '<form method="post"> 
         <input type="hidden" name="action" value="login">
         <label>Email:</label>
         <input type="email" name="email" value="' . $_COOKIE['user'] . '" required><br>
@@ -124,10 +123,10 @@ function login(){
     if(check_user($db_con, $_POST['email'])){ //check if user exists
         //if user does exsist, check if password entered matches password in database
         if(password_verify($_POST['password'], $db_con->query("SELECT Password FROM users WHERE Email = '$_POST[email]'")->fetchColumn())){
-            
-            $_SESSION['user'] = $_POST['email'];
-            echo "Session variable: " . $_SESSION['user'];
-            $_GET['page'] = "setcookie";      
+            if(!isset($_COOKIE['user'])){
+                $_SESSION['user'] = $_POST['email'];   
+            }
+                  
             echo "Login successful";
             
         } else {
@@ -169,24 +168,12 @@ function addUser(){
         }
     }
 }
-//this returns false atm... waiting on discussion forum to see if I can access php.ini
-function sendEmail($email, $user){
+
+//PARTIAL MARKS???????? It's literally impossible for this scope of assignment????
+function send_email($email){
     $to = $email;
-    $subject = "Email Subject";
-
-    $message = 'Dear '.$user.',<br>';
-    $message .= "We welcome you to be part of family<br><br>";
-    $message .= "Regards,<br>";
-
-    // Always set content-type when sending HTML email
-    $headers = "MIME-Version: 1.0" . "\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-
-    // More headers
-    $headers .= 'From: <enquiry@example.com>' . "\r\n";
-    $headers .= 'Cc: myboss@example.com' . "\r\n";
-
-    mail($to,$subject,$message,$headers);   
+    $subject = "Email Verification";
+    $message = "Please click the link below to verify your email address: http://localhost/PHP/PHP%20Project%20-%20Final%20Project/index.php?page=verify&email=$email";
+    $headers = "From: a_user@user.com";
+    mail($to, $subject, $message, $headers);
 }
-
-

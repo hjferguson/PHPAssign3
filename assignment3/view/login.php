@@ -1,12 +1,3 @@
-<!--register new users need name, email and password-->
-<!-- <html>
-    <head>
-        <title>Login</title> -->
-        <!-- <link rel="stylesheet" type="text/css" href="main.css"> -->
-    <!-- </head>
-    <body>
-        <main>
-            <h1>Log In</h1> -->
             
             <?php
             
@@ -15,7 +6,4 @@
               login();
             }
             ?>
-<!--            
-        </main>
-    </body>
-</html>                                                                                                                                                              -->
+                                                                                                                                                            -->
